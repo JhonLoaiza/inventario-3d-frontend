@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import apiClient from '../api.js';
 
 // ¡NUEVO! Importamos los componentes de Bootstrap
-import { Table, Button, Form, Alert, Row, Col } from 'react-bootstrap';
+import { Table, Button, Form, Alert, Row, Col, Modal} from 'react-bootstrap';
 
 function ProductosPage() {
   // --- ESTADOS --- (Sin cambios)
@@ -17,6 +17,9 @@ function ProductosPage() {
   const [gramosEstimados, setGramosEstimados] = useState(0);
   const [formError, setFormError] = useState(null);
   const [editingId, setEditingId] = useState(null);
+  const [showModal, setShowModal] = useState(false); // ¿Se muestra el modal?
+  const [productoSeleccionado, setProductoSeleccionado] = useState(null); // ¿Qué producto estamos ajustando?
+  const [cantidadAjuste, setCantidadAjuste] = useState(0); // ¿Cuánto vamos a sumar/restar?
 
   // --- FUNCIONES DE API --- (Sin cambios)
   // (Aquí van tus 5 funciones: fetchProductos, handleDelete, 
@@ -96,6 +99,48 @@ function ProductosPage() {
   useEffect(() => {
     fetchProductos();
   }, []);
+
+  const handleOpenModal = (producto) => {
+  setProductoSeleccionado(producto);
+  setCantidadAjuste(0);
+  setShowModal(true);
+};
+
+// ¡NUEVA FUNCIÓN! Se llama al cerrar el modal
+const handleCloseModal = () => {
+  setShowModal(false);
+  setProductoSeleccionado(null);
+  setCantidadAjuste(0);
+};
+
+// ¡NUEVA FUNCIÓN! Se llama al enviar el formulario del modal
+const handleAjustarStock = async (e) => {
+  e.preventDefault();
+  if (!productoSeleccionado || cantidadAjuste === 0) {
+    return; // No hacer nada si no hay cantidad
+  }
+
+  try {
+    const response = await apiClient.post(
+      `/productos/${productoSeleccionado.id}/ajustar-stock`, 
+      { cantidad: parseInt(cantidadAjuste) }
+    );
+
+    // Actualizamos la lista de productos con la nueva data
+    setProductos(
+      productos.map((p) =>
+        p.id === productoSeleccionado.id ? response.data : p
+      )
+    );
+
+    // Cerramos el modal
+    handleCloseModal();
+
+  } catch (err) {
+    // Podríamos poner un error en el modal
+    console.error("Error al ajustar stock:", err);
+  }
+};
   // --- FIN DE FUNCIONES ---
 
   // --- RENDERIZADO (JSX) CON BOOTSTRAP ---
@@ -197,13 +242,45 @@ function ProductosPage() {
                   Editar
                 </Button>
                 <Button variant="danger" size="sm" onClick={() => handleDelete(producto.id)}>
-Eliminar
+                Eliminar
+                </Button>
+                <Button variant="info" size="sm" onClick={() => handleOpenModal(producto)}>
+                Ajustar Stock
                 </Button>
               </td>
             </tr>
           ))}
         </tbody>
       </Table>
+      <Modal show={showModal} onHide={handleCloseModal}>
+  <Modal.Header closeButton>
+    <Modal.Title>
+      Ajustar Stock: {productoSeleccionado?.nombre}
+    </Modal.Title>
+  </Modal.Header>
+  <Form onSubmit={handleAjustarStock}>
+    <Modal.Body>
+      <p>Stock Actual: {productoSeleccionado?.stock_actual} uds.</p>
+      <Form.Group>
+        <Form.Label>Cantidad a Sumar o Restar:</Form.Label>
+        <Form.Control
+          type="number"
+          value={cantidadAjuste}
+          onChange={(e) => setCantidadAjuste(e.target.value)}
+          placeholder="Ej: 5 (para sumar) o -2 (para restar)"
+        />
+      </Form.Group>
+    </Modal.Body>
+    <Modal.Footer>
+      <Button variant="secondary" onClick={handleCloseModal}>
+        Cancelar
+      </Button>
+      <Button variant="primary" type="submit">
+        Guardar Ajuste
+      </Button>
+    </Modal.Footer>
+  </Form>
+</Modal>
     </div>
   );
 }

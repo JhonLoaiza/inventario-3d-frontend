@@ -1,46 +1,56 @@
 // src/App.jsx
 
-// 1. Importa Link y Outlet (como antes)
 import { Link, Outlet } from 'react-router-dom';
+import { Navbar, Nav, Container, Button } from 'react-bootstrap';
 
-// 2. ¡NUEVO! Importa los componentes de Bootstrap
-import { Navbar, Nav, Container } from 'react-bootstrap';
+// 1. Importa el hook (esto está bien)
+import { useAuth } from './context/AuthContext';
+
+// 2. BORRA la línea "const { logout } = useAuth();" de aquí afuera
 
 function App() {
+  // 3. ¡MUEVE LA LÍNEA AQUÍ!
+  //    Los Hooks siempre se llaman DENTRO de la función del componente
+  const { logout } = useAuth();
+
   return (
-    <div>
-      {/* 3. Reemplazamos <nav> por <Navbar> */}
-      <Navbar bg="dark" variant="dark" expand="lg">
-        <Container>
-          <Navbar.Brand as={Link} to="/">Inventario 3D</Navbar.Brand>
-          <Navbar.Toggle aria-controls="basic-navbar-nav" />
-          <Navbar.Collapse id="basic-navbar-nav">
-            <Nav className="me-auto">
+    <div>
+      <Navbar bg="dark" variant="dark" expand="lg">
+        <Container>
+          <Navbar.Brand as={Link} to="/">Inventario M3D</Navbar.Brand>
+          <Navbar.Toggle aria-controls="basic-navbar-nav" />
+          <Navbar.Collapse id="basic-navbar-nav">
+            <Nav className="me-auto">
 
-              {/* 4. ¡LA CLAVE!
-                  Usamos <Nav.Link> (el componente de Bootstrap)
-                  pero le decimos "as={Link}" para que use el Link de React Router.
-                  ¡Esto une Bootstrap con React Router! */}
-              <Nav.Link as={Link} to="/">Dashboard</Nav.Link>
-              <Nav.Link as={Link} to="/materiales">Materiales</Nav.Link>
-              <Nav.Link as={Link} to="/bobinas">Bobinas</Nav.Link>
-              <Nav.Link as={Link} to="/productos">Productos</Nav.Link>
-              <Nav.Link as={Link} to="/trabajos">Producción</Nav.Link>
+              <Nav.Link as={Link} to="/">Dashboard</Nav.Link>
+              <Nav.Link as={Link} to="/materiales">Materiales</Nav.Link>
+              <Nav.Link as={Link} to="/bobinas">Bobinas</Nav.Link>
+              <Nav.Link as={Link} to="/productos">Productos</Nav.Link>
+              <Nav.Link as={Link} to="/trabajos">Producción</Nav.Link>
 
-            </Nav>
-          </Navbar.Collapse>
-        </Container>
-      </Navbar>
+            </Nav> {/* <-- ¡OJO! También corregí tu HTML aquí, tenías un <Nav> dentro de otro <Nav> */}
 
-      {/* 5. El <Outlet> y el <main> ahora los envolvemos en un <Container> 
-          para que el contenido no se pegue a los bordes de la pantalla. */}
-      <Container>
-        <main style={{ padding: '20px 0' }}>
-          <Outlet />
-        </main>
-      </Container>
-    </div>
-  );
+            <Navbar.Text className="text-muted me-3">
+              v2.0.0-beta
+            </Navbar.Text>
+
+            <Nav className="ms-auto"> {/* 'ms-auto' lo empuja a la derecha */}
+              <Button variant="outline-light" onClick={logout}>
+                Cerrar Sesión
+              </Button>
+            </Nav>
+
+          </Navbar.Collapse>
+        </Container>
+      </Navbar>
+
+      <Container>
+        <main style={{ padding: '20px 0' }}>
+          <Outlet />
+        </main>
+      </Container>
+    </div>
+  );
 }
 
 export default App;

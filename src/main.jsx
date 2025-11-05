@@ -4,7 +4,6 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 // 1. Importamos las herramientas del router
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
-import 'bootstrap/dist/css/bootstrap.min.css';
 
 // 2. Importamos nuestro Layout y nuestras páginas
 import App from './App.jsx';
@@ -13,37 +12,38 @@ import MaterialesPage from './pages/MaterialesPage.jsx';
 import BobinasPage from './pages/BobinasPage.jsx';
 import ProductosPage from './pages/ProductosPage.jsx';
 import TrabajosPage from './pages/TrabajosPage.jsx';
+import ProtectedRoute from './components/ProtectedRoute.jsx';
 
-// 3. ¡Creamos el "mapa" de rutas!
+// ¡NUEVO! Importa el Proveedor de Autenticación
+import { AuthProvider } from './context/AuthContext.jsx';
+
+// ¡NUEVO! Importamos la página de Login
+import LoginPage from './pages/LoginPage.jsx';
+
+// 3. ¡Creamos el "mapa" de rutas! (¡UNA SOLA VEZ!)
 const router = createBrowserRouter([
   {
-    path: '/',         // En la ruta raíz "/"
-    element: <App />,  // Renderiza nuestro Layout (App.jsx)
-    
-    // 4. "Hijos": Estas rutas se renderizarán DENTRO del <Outlet> de App.jsx
+    // Ruta para el Layout Principal (Navbar, etc.)
+    // Este layout estará PROTEGIDO
+    path: '/',
+    element: (
+      <ProtectedRoute>
+        <App /> 
+      </ProtectedRoute>
+    ),
+    // Las páginas que se renderizarán DENTRO del <Outlet> de App
     children: [
-      {
-        path: '/', // Cuando la ruta es EXACTAMENTE "/"
-        element: <DashboardPage />, // Muestra el Dashboard
-      },
-      {
-        path: '/materiales', // Cuando la ruta es "/materiales"
-        element: <MaterialesPage />, // Muestra la página de Materiales
-      },
-      { 
-        path: '/bobinas',
-        element: <BobinasPage />,
-      },
-
-      { 
-        path: '/productos',
-        element: <ProductosPage />,
-      },
-      { 
-        path: '/trabajos',
-        element: <TrabajosPage />,
-      },
-    ],
+      { path: '/', element: <DashboardPage /> },
+      { path: '/materiales', element: <MaterialesPage /> },
+      { path: '/bobinas', element: <BobinasPage /> },
+      { path: '/productos', element: <ProductosPage /> },
+      { path: '/trabajos', element: <TrabajosPage /> },
+    ]
+  },
+  {
+    // Ruta de Login (PÚBLICA)
+    path: '/login',
+    element: <LoginPage />,
   },
 ]);
 
@@ -51,6 +51,9 @@ const router = createBrowserRouter([
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    {/* 2. ¡NUEVO! Envolvemos la app con el AuthProvider */}
+    <AuthProvider>
+      <RouterProvider router={router} />
+    </AuthProvider>
   </React.StrictMode>
 );
