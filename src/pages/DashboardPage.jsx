@@ -1,36 +1,48 @@
 // src/pages/DashboardPage.jsx
 
+// src/pages/DashboardPage.jsx
+
 import React, { useState, useEffect } from 'react';
 import apiClient from '../api.js';
-
-// ¡NUEVO! Importamos los componentes de Bootstrap
-import { Row, Col, Card, Alert } from 'react-bootstrap';
+import { Row, Col, Card, Alert, Container } from 'react-bootstrap';
 
 function DashboardPage() {
-  // --- ESTADOS --- (Sin cambios)
+  // --- ESTADOS ---
   const [stats, setStats] = useState({
     valorProductos: 0,
-    valorMateriales: 0
+    valorMateriales: 0,
+    saldoCaja: 0 // ¡NUEVO ESTADO!
   });
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  // --- FUNCIÓN DE API --- (Sin cambios)
+  // --- FUNCIÓN DE API ---
   const fetchDashboardData = async () => {
     try {
       setLoading(true);
-      const [productosRes, materialesRes] = await Promise.all([
+      
+      // ¡Ahora hacemos 3 peticiones!
+      const [productosRes, materialesRes, saldoRes] = await Promise.all([
         apiClient.get('/dashboard/valorizado-productos'),
-        apiClient.get('/dashboard/valorizado-materiales')
+        apiClient.get('/dashboard/valorizado-materiales'),
+        apiClient.get('/dashboard/saldo') // ¡NUEVA PETICIÓN!
       ]);
+
+      console.log("Respuesta Saldo COMPLETA:", saldoRes);
+      console.log("Data de Saldo:", saldoRes.data);
+      
       setStats({
         valorProductos: productosRes.data.valor_total_inventario,
-        valorMateriales: materialesRes.data.valor_total_materiales
+        valorMateriales: materialesRes.data.valor_total_materiales,
+        saldoCaja: saldoRes.data.saldo // Guardamos el saldo
       });
+      
       setError(null);
     } catch (err) {
-      setError(err.message);
-      console.error("Error al obtener datos del dashboard:", err);
+      console.error("Error al obtener datos:", err);
+      // No bloqueamos la app si falla el dashboard, solo mostramos error
+      setError("No se pudieron cargar algunos datos.");
     } finally {
       setLoading(false);
     }
@@ -40,54 +52,58 @@ function DashboardPage() {
     fetchDashboardData();
   }, []);
 
-  // --- RENDERIZADO (JSX) CON BOOTSTRAP ---
+  // --- RENDERIZADO ---
   
-  if (loading) return <Alert variant="info">Calculando estadísticas... ⏳</Alert>;
-  if (error) return <Alert variant="danger">Error: {error} ❌</Alert>;
-
+  if (loading) return <Alert variant="info">Calculando finanzas... ⏳</Alert>;
+  
   return (
     <div>
-      <h2>Dashboard Principal</h2>
-      <p>Este es el resumen en tiempo real de tu emprendimiento.</p>
+      <h2 className="mb-4">Tablero de Control M3D</h2>
       
-      {/* Usamos <Row> y <Col> para que las tarjetas 
-        se pongan una al lado de la otra en pantallas medianas (md) y 
-        se apilen en pantallas pequeñas (celulares).
-      */}
-      <Row className="mt-4">
-        
-        {/* --- TARJETA 1: PRODUCTOS TERMINADOS --- */}
-        <Col md={6} className="mb-3">
-          {/* Reemplazamos <StatCard> por <Card> de Bootstrap */}
-          <Card border="primary" className="text-center">
-            <Card.Header as="h5">Valor Total (Productos Terminados)</Card.Header>
-            <Card.Body>
-              <Card.Text as="div">
-                {/* Usamos "clases de utilidad" de Bootstrap para el estilo:
-                  - fs-1: Font-size 1 (la más grande)
-                  - fw-bold: Font-weight bold (negrita)
-                  - text-primary: Color de texto azul
-                */}
+      {error && <Alert variant="danger">{error}</Alert>}
+      
+      <Row>
+        {/* --- TARJETA 1: SALDO EN CAJA (¡LA NUEVA!) --- */}
+        <Col md={4} className="mb-4">
+          <Card border="warning" className="text-center h-100 shadow-sm">
+            <Card.Header as="h5" className="bg-warning text-dark">Saldo Actual (Caja)</Card.Header>
+            <Card.Body className="d-flex align-items-center justify-content-center">
+              <div>
+                <div className="fs-1 fw-bold text-warning">
+                  ${new Intl.NumberFormat('es-CL').format(stats.saldoCaja)}
+                </div>
+                <div className="text-muted">CLP Disponible</div>
+              </div>
+            </Card.Body>
+          </Card>
+        </Col>
+
+        {/* --- TARJETA 2: PRODUCTOS TERMINADOS --- */}
+        <Col md={4} className="mb-4">
+          <Card border="primary" className="text-center h-100 shadow-sm">
+            <Card.Header as="h5" className="bg-primary text-white">Inventario (Venta)</Card.Header>
+            <Card.Body className="d-flex align-items-center justify-content-center">
+              <div>
                 <div className="fs-1 fw-bold text-primary">
                   ${new Intl.NumberFormat('es-CL').format(stats.valorProductos)}
                 </div>
-                <div className="text-muted">CLP</div>
-              </Card.Text>
+                <div className="text-muted">Valorizado en Stock</div>
+              </div>
             </Card.Body>
           </Card>
         </Col>
         
-        {/* --- TARJETA 2: MATERIA PRIMA --- */}
-        <Col md={6} className="mb-3">
-          <Card border="success" className="text-center">
-            <Card.Header as="h5">Valor Total (Materia Prima)</Card.Header>
-            <Card.Body>
-              <Card.Text as="div">
+        {/* --- TARJETA 3: MATERIA PRIMA --- */}
+        <Col md={4} className="mb-4">
+          <Card border="success" className="text-center h-100 shadow-sm">
+            <Card.Header as="h5" className="bg-success text-white">Materia Prima</Card.Header>
+            <Card.Body className="d-flex align-items-center justify-content-center">
+              <div>
                 <div className="fs-1 fw-bold text-success">
                   ${new Intl.NumberFormat('es-CL').format(stats.valorMateriales)}
                 </div>
-                <div className="text-muted">CLP</div>
-              </Card.Text>
+                <div className="text-muted">Filamento Restante</div>
+              </div>
             </Card.Body>
           </Card>
         </Col>

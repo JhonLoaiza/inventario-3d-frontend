@@ -1,68 +1,63 @@
-// src/context/AuthContext.jsx
+import React, { useState, useEffect } from 'react';
+import apiClient from '../api.js';
 
-import React, { createContext, useState, useContext, useEffect } from 'react';
-import apiClient from '../api.js'; // Tu cliente de Axios
+const AuthContext = React.createContext();
 
-// 1. Creamos el contexto (el almacén)
-const AuthContext = createContext();
-
-// 2. Creamos un "hook" personalizado para usar el contexto fácilmente
 export const useAuth = () => {
-  const context = useContext(AuthContext);
+  const context = React.useContext(AuthContext);
   if (!context) {
     throw new Error('useAuth debe ser usado dentro de un AuthProvider');
   }
   return context;
 };
 
-// 3. Creamos el "Proveedor" (el componente que envuelve la app)
 export const AuthProvider = ({ children }) => {
-  const [token, setToken] = useState(null); // Aquí guardaremos el pasaporte (token)
-  const [isAuthenticated, setIsAuthenticated] = useState(false); // ¿Está logueado?
-  const [loading, setLoading] = useState(true); // Para saber si estamos verificando el token
-  const [user, setUser] = useState(null); // Para guardar los datos del usuario (ej. 'jhon')
+  const [token, setToken] = useState(null);
+  const [user, setUser] = useState(null); // Aquí guardaremos el nombre
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  // Función de Login: Llama a la API y guarda el pasaporte
   const login = async (username, password) => {
     try {
       setLoading(true);
       const res = await apiClient.post('/auth/login', { username, password });
-
-      // Guardamos el pasaporte en el estado
+      
       setToken(res.data.token);
+      setUser(res.data.user); // 1. Guardamos el usuario en el estado
       setIsAuthenticated(true);
-
-      // Guardamos el pasaporte en el "localStorage" del navegador
-      // para que la sesión persista si recarga la página
+      
       localStorage.setItem('token', res.data.token);
-
+      // 2. Guardamos el usuario en el disco (localStorage) como texto
+      localStorage.setItem('user', JSON.stringify(res.data.user));
+      
       setLoading(false);
-      return true; // Éxito
+      return true;
     } catch (error) {
-      console.error('Error en login:', error.response.data);
+      console.error('Error en login:', error.response?.data);
       setIsAuthenticated(false);
       setToken(null);
+      setUser(null);
       setLoading(false);
-      return false; // Fracaso
+      return false;
     }
   };
 
-  // Función de Logout: Borra el pasaporte
   const logout = () => {
     setToken(null);
-    setIsAuthenticated(false);
     setUser(null);
+    setIsAuthenticated(false);
     localStorage.removeItem('token');
+    localStorage.removeItem('user'); // Borramos el usuario al salir
   };
 
-  // ¡IMPORTANTE! Verificar si ya existe un pasaporte al cargar la app
   useEffect(() => {
     const checkLogin = () => {
       const storedToken = localStorage.getItem('token');
-      if (storedToken) {
-        // Aquí deberíamos verificar el token contra el backend,
-        // pero por ahora, solo con tenerlo guardado nos basta.
+      const storedUser = localStorage.getItem('user'); // 3. Recuperamos el usuario
+
+      if (storedToken && storedUser) {
         setToken(storedToken);
+        setUser(JSON.parse(storedUser)); // Lo convertimos de texto a objeto
         setIsAuthenticated(true);
       }
       setLoading(false);
@@ -70,11 +65,10 @@ export const AuthProvider = ({ children }) => {
     checkLogin();
   }, []);
 
-  // 4. Lo que nuestro "almacén" le ofrece al resto de la app
   return (
     <AuthContext.Provider value={{
       token,
-      user,
+      user, // ¡Ahora este objeto está disponible para toda la app!
       isAuthenticated,
       loading,
       login,

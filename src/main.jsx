@@ -13,6 +13,7 @@ import BobinasPage from './pages/BobinasPage.jsx';
 import ProductosPage from './pages/ProductosPage.jsx';
 import TrabajosPage from './pages/TrabajosPage.jsx';
 import ProtectedRoute from './components/ProtectedRoute.jsx';
+import VentasPage from './pages/VentasPage.jsx';
 
 // ¡NUEVO! Importa el Proveedor de Autenticación
 import { AuthProvider } from './context/AuthContext.jsx';
@@ -38,6 +39,8 @@ const router = createBrowserRouter([
       { path: '/bobinas', element: <BobinasPage /> },
       { path: '/productos', element: <ProductosPage /> },
       { path: '/trabajos', element: <TrabajosPage /> },
+      { path: '/trabajos', element: <TrabajosPage /> },
+      { path: '/ventas', element: <VentasPage /> },
     ]
   },
   {
